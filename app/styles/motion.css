@@ -1,0 +1,82 @@
+/* ============================================================
+   ДВИЖЕНИЕ И ПЕЧАТЬ
+   ============================================================ */
+
+/* Пользователь просил систему не анимировать — выключаем всё,
+   но следим, чтобы появляющиеся блоки остались видимыми. */
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  *,
+  *::before,
+  *::after {
+    animation: none !important;
+    transition-duration: 120ms !important;
+  }
+
+  .reveal {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* Печать: убираем интерфейс, разворачиваем всё в один поток */
+@media print {
+  body {
+    background: #fff;
+    color: #000;
+  }
+
+  body::before,
+  body::after,
+  .topbar,
+  .master,
+  .slides-ui,
+  .chr-controls,
+  .hint {
+    display: none !important;
+  }
+
+  main,
+  section,
+  .band {
+    background: none !important;
+    border: 0 !important;
+  }
+
+  .reveal {
+    opacity: 1 !important;
+    transform: none !important;
+  }
+
+  h1,
+  h2,
+  h3,
+  .chr-year,
+  .fact-num,
+  .part b {
+    color: #000 !important;
+    text-shadow: none !important;
+  }
+
+  .hero,
+  .creator,
+  .chronicle,
+  .pair,
+  .facts,
+  .rivals {
+    display: block !important;
+  }
+
+  .slides-stage img {
+    filter: grayscale(1) !important;
+  }
+
+  /* печатается только текущий кадр слайдера */
+  .slides-stage {
+    position: relative;
+    page-break-inside: avoid;
+  }
+}

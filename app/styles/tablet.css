@@ -1,0 +1,53 @@
+/* ============================================================
+   ПЛАНШЕТЫ И УЗКИЕ НОУТБУКИ · до 1024px
+   Двухколоночные развороты ещё держатся, но становятся тесными:
+   разворачиваем самые широкие из них и уменьшаем поля.
+   ============================================================ */
+
+@media (max-width: 1024px) {
+  section {
+    padding: clamp(3.5rem, 9vh, 6rem) 1.5rem;
+  }
+
+  /* досье и текст об Эдисоне рядом уже не помещаются */
+  .creator {
+    grid-template-columns: 1fr;
+    gap: 2.5rem;
+  }
+
+  .portrait {
+    max-width: 460px;
+  }
+
+  /* хроника: карточка и лампа встают друг под другом,
+     лампа — сверху, чтобы разгорание было видно сразу */
+  .chronicle {
+    grid-template-columns: 1fr;
+    gap: 2.5rem;
+  }
+
+  .chr-lamp {
+    order: -1;
+    justify-self: stretch;
+    max-width: 420px;
+  }
+
+  .chr-card {
+    min-height: 0;
+  }
+
+  /* герой ещё двухколоночный, но лампе нужно меньше места */
+  .hero {
+    grid-template-columns: 1fr 0.75fr;
+    gap: 2.5rem;
+  }
+
+  .hero-lamp {
+    max-width: 340px;
+  }
+
+  .facts,
+  .rivals {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}

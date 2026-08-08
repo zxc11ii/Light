@@ -1,0 +1,60 @@
+/* ============================================================
+   СЕНСОРНЫЕ УСТРОЙСТВА · нет курсора, нет наведения
+   На тач-экранах :hover срабатывает по тапу и «залипает»,
+   поэтому эффекты наведения отключаем, а то, что они
+   показывали, отдаём сразу.
+   ============================================================ */
+
+@media (hover: none) {
+  /* карточки не должны подпрыгивать и залипать после тапа */
+  .lamp:hover,
+  .rival:hover,
+  .fact:hover {
+    transform: none;
+  }
+
+  /* портреты подсвечивались только при наведении — на тач
+     показываем их сразу чуть светлее, иначе лица теряются */
+  .slides-stage img {
+    filter: var(--photo-hover);
+  }
+
+  .slides-stage img.paper {
+    filter: var(--photo-paper-hover);
+  }
+
+  /* выключенная лампа тоже светлее: подсказки «наведи» здесь нет */
+  .lamp-stage .frame-off {
+    filter: grayscale(0.3) brightness(0.82) contrast(1.05);
+  }
+
+  /* цифры фактов и годы подсвечены постоянно */
+  .fact-num {
+    color: var(--glow-deep);
+  }
+
+  /* управление слайдером всегда видно и достаточно крупное */
+  .slides-arrows button {
+    width: 44px;
+    height: 44px;
+    background: rgba(0, 0, 0, 0.5);
+  }
+
+  .slides-dots button {
+    padding: 14px 0;
+  }
+
+  /* убираем синюю подсветку тапа в мобильных браузерах */
+  button,
+  a {
+    -webkit-tap-highlight-color: transparent;
+  }
+}
+
+/* Устройства с точным курсором: тонкие полосы прокрутки в тон странице */
+@media (pointer: fine) {
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: var(--iron) transparent;
+  }
+}

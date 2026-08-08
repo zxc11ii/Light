@@ -1,0 +1,1242 @@
+:root {
+  color-scheme: dark;
+
+  /* чёрно-серая палитра */
+  --void: #0a0a0b;
+  --coal: #101012;
+  --graphite: #17181b;
+  --iron: #232529;
+  --ash: #4a4d53;
+  --smoke: #8b8f96;
+  --fog: #c7cad0;
+  --chalk: #edeef0;
+
+  /* свет лампы */
+  --glow: #ffc94d;
+  --glow-soft: #ffdd8a;
+  --glow-deep: #b8791a;
+
+  --panel: rgba(16, 16, 18, 0.82);
+  --grain: 0.035;
+  /* обработка архивных снимков: приводим разные плёнки к одному отпечатку */
+  --photo: grayscale(1) sepia(0.28) brightness(0.72) contrast(1.08);
+  --photo-hover: grayscale(0.8) sepia(0.34) brightness(0.98) contrast(1.04);
+  --photo-paper: grayscale(1) sepia(0.3) brightness(0.5) contrast(1.15);
+  --photo-paper-hover: grayscale(0.85) sepia(0.36) brightness(0.68) contrast(1.12);
+
+  --maxw: 1180px;
+
+  /* обычный гротеск везде — и в заголовках, и в тексте */
+  --font-body: 'Manrope', 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, Arial, sans-serif;
+  --font-display: var(--font-body);
+}
+
+/* ---------- СВЕТЛАЯ ТЕМА ---------- */
+
+:root[data-theme='light'] {
+  color-scheme: light;
+
+  --void: #f3f2ef;
+  --coal: #ffffff;
+  --graphite: #eae8e3;
+  --iron: #d5d2cb;
+  --ash: #8d8a82;
+  --smoke: #5d5a54;
+  --fog: #33312d;
+  --chalk: #14130f;
+
+  /* янтарь темнее, иначе на белом он нечитаем */
+  --glow: #b47a06;
+  --glow-soft: #d29a25;
+  --glow-deep: #9a6604;
+
+  --panel: rgba(255, 255, 255, 0.86);
+  --grain: 0.02;
+  --photo: grayscale(1) sepia(0.2) brightness(1.02) contrast(0.95);
+  --photo-hover: grayscale(0.65) sepia(0.26) brightness(1.08) contrast(0.98);
+  --photo-paper: grayscale(1) sepia(0.18) brightness(0.98) contrast(1.02);
+  --photo-paper-hover: grayscale(0.7) sepia(0.24) brightness(1.02) contrast(1);
+}
+
+/* Лампа Эдисона снята на чёрном. В тёмной теме фон снимка совпадает с фоном
+   страницы, а на светлой давал чёрный квадрат.
+
+   Маска вытянута по вертикали (радиус 115% высоты против 52% ширины): колба
+   занимает кадр почти во всю высоту, и круглая маска гасила её снизу — отсюда
+   бралась белёсая дымка. Теперь затухание идёт только по бокам, лампа целиком
+   лежит в непрозрачной зоне и остаётся чистой. */
+:root[data-theme='light'] .lamp.blend .lamp-stage img,
+:root[data-theme='light'] .chr-stage img {
+  -webkit-mask-image: radial-gradient(52% 115% at 50% 48%, #000 60%, transparent 100%);
+  mask-image: radial-gradient(52% 115% at 50% 48%, #000 60%, transparent 100%);
+}
+
+/* глубокие тени снимка на светлом фоне вязнут — приподнимаем яркость */
+:root[data-theme='light'] .lamp.blend .lamp-stage .frame-off,
+:root[data-theme='light'] .chr-stage .frame-off {
+  filter: grayscale(0.3) brightness(1.05) contrast(0.92);
+}
+
+:root[data-theme='light'] .lamp.blend.on .lamp-stage .frame-off {
+  filter: grayscale(0) brightness(1.12) contrast(0.95);
+}
+
+/* единственное тёмное пятно, которое остаётся, — опора под лампой:
+   мягкая тень у нижнего края кадра */
+:root[data-theme='light'] .lamp.blend .lamp-stage::after,
+:root[data-theme='light'] .chr-stage::after {
+  content: '';
+  position: absolute;
+  left: 17%;
+  right: 17%;
+  bottom: 1.5%;
+  height: 9%;
+  border-radius: 50%;
+  pointer-events: none;
+  /* multiply, а не заливка: тень затемняет кадр, а не закрывает его */
+  mix-blend-mode: multiply;
+  background: radial-gradient(closest-side, rgba(24, 22, 18, 0.3), transparent 74%);
+  filter: blur(5px);
+}
+
+/* и свечение наружу гасим: на светлом сильный засвет читается как грязь */
+:root[data-theme='light'] .bloom,
+:root[data-theme='light'] .chr-bloom {
+  filter: blur(30px);
+}
+
+:root[data-theme='light'] .lamp .bloom {
+  opacity: 0;
+}
+
+:root[data-theme='light'] .lamp.on .bloom {
+  opacity: 0.5;
+}
+
+:root[data-theme='light'] .chr-bloom {
+  opacity: calc(var(--p, 0) * 0.5);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  padding: 0;
+  margin: 0;
+}
+
+html {
+  scroll-behavior: smooth;
+  /* свечение ламп выходит за пределы фотографий — режем, но без своей прокрутки */
+  overflow-x: clip;
+}
+
+body {
+  background: var(--void);
+  color: var(--fog);
+  font-family: var(--font-body), sans-serif;
+  font-size: 17px;
+  line-height: 1.7;
+  -webkit-font-smoothing: antialiased;
+  overflow-x: clip;
+  transition: background 500ms ease, color 500ms ease;
+}
+
+/* комната светлеет от каждой зажжённой лампы */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  /* --room — сколько ламп нажато, --beam — накал лампы в хронике */
+  background: radial-gradient(
+      110% 70% at 50% 0%,
+      rgba(255, 201, 77, calc(0.05 * var(--room, 0) + 0.05 * var(--beam, 0))),
+      transparent 62%
+    ),
+    radial-gradient(
+      90% 60% at 50% 100%,
+      rgba(255, 201, 77, calc(0.03 * var(--room, 0) + 0.03 * var(--beam, 0))),
+      transparent 60%
+    );
+  transition: background 1100ms ease;
+}
+
+/* лёгкая зернистость поверх всего — фотографиям идёт */
+body::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: 9;
+  pointer-events: none;
+  opacity: var(--grain);
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+/* ---------- типографика ---------- */
+
+h1,
+h2,
+h3,
+.script {
+  font-family: var(--font-display), sans-serif;
+  font-weight: 600;
+  color: var(--chalk);
+  letter-spacing: -0.025em;
+  line-height: 1.08;
+  margin: 0;
+}
+
+h1 {
+  font-size: clamp(2.8rem, 8vw, 5.2rem);
+  letter-spacing: -0.04em;
+}
+
+h1 em {
+  font-style: normal;
+  color: var(--glow);
+  text-shadow: 0 0 70px rgba(255, 201, 77, 0.4);
+}
+
+h2 {
+  font-size: clamp(2rem, 4.4vw, 3rem);
+  letter-spacing: -0.03em;
+}
+
+h3 {
+  font-size: clamp(1.2rem, 2.1vw, 1.45rem);
+  letter-spacing: -0.015em;
+}
+
+p {
+  margin: 0 0 1.1em;
+}
+
+p:last-child {
+  margin-bottom: 0;
+}
+
+.eyebrow {
+  display: block;
+  font-size: 0.7rem;
+  font-weight: 500;
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  color: var(--ash);
+  margin-bottom: 1.1rem;
+}
+
+.lead {
+  font-size: 1.1rem;
+  color: var(--smoke);
+  max-width: 60ch;
+  margin-top: 1.4rem;
+}
+
+/* ---------- каркас ---------- */
+
+main {
+  position: relative;
+  z-index: 1;
+}
+
+section {
+  max-width: var(--maxw);
+  margin: 0 auto;
+  padding: clamp(4.5rem, 11vh, 8rem) 1.5rem;
+}
+
+section.tight {
+  padding-bottom: 2.5rem;
+}
+
+section.tight-top {
+  padding-top: 2.5rem;
+}
+
+/* ---------- РАЗДЕЛЕНИЕ БЛОКОВ ---------- */
+
+/* полоса-подложка во всю ширину: соседние разделы перестают сливаться.
+   Границ у неё нет — линию на каждом стыке рисует .divider,
+   иначе на переходе получалось две линии подряд. */
+.band {
+  background: var(--coal);
+  transition: background 500ms ease;
+}
+
+/* карточки внутри полосы должны быть чуть контрастнее её фона */
+.band .portrait,
+.band .rival,
+.band .fact {
+  background: linear-gradient(180deg, var(--graphite), var(--void));
+}
+
+/* разделитель — одна линия во всю ширину на стыке блоков */
+.divider {
+  height: 1px;
+  background: var(--iron);
+  transition: background 500ms ease;
+}
+
+/* номер и название части — уже внутри блока, под линией */
+.part {
+  display: flex;
+  align-items: baseline;
+  gap: 0.85rem;
+  margin-bottom: 1.2rem;
+  font-size: 0.7rem;
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  color: var(--ash);
+}
+
+.part b {
+  font-weight: 600;
+  font-size: 0.74rem;
+  letter-spacing: 0.1em;
+  color: var(--glow);
+  font-variant-numeric: tabular-nums;
+}
+
+/* подзаголовок внутри раздела */
+.sub-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-top: 4rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid var(--iron);
+}
+
+.sub-head h3 {
+  font-size: 1.1rem;
+  letter-spacing: 0.02em;
+}
+
+.sub-hint {
+  font-size: 0.66rem;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+  color: var(--ash);
+}
+
+/* появление при скролле */
+.reveal {
+  opacity: 0;
+  transform: translateY(20px);
+  transition: opacity 750ms cubic-bezier(0.2, 0.7, 0.2, 1),
+    transform 750ms cubic-bezier(0.2, 0.7, 0.2, 1);
+}
+
+.reveal.in {
+  opacity: 1;
+  transform: none;
+}
+
+/* ---------- ЛАМПА (без рамки) ---------- */
+
+.lamp {
+  display: block;
+  width: 100%;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  cursor: pointer;
+  text-align: left;
+  -webkit-tap-highlight-color: transparent;
+  transition: transform 600ms cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.lamp:hover {
+  transform: translateY(-6px);
+}
+
+.lamp:focus-visible {
+  outline: 2px solid var(--glow);
+  outline-offset: 8px;
+  border-radius: 2px;
+}
+
+.lamp-stage {
+  display: block;
+  position: relative;
+  width: 100%;
+  aspect-ratio: 1 / 1;
+}
+
+.lamp-stage img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  user-select: none;
+  -webkit-user-drag: none;
+}
+
+/* Переход включения/выключения.
+   Нить разгорается медленнее, чем гаснет, — как у настоящей лампы,
+   поэтому «вкл» и «выкл» получают разные кривые и длительности. */
+
+.lamp-stage .frame-off {
+  filter: grayscale(0.4) brightness(0.72) contrast(1.06);
+  transition: filter 1100ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.lamp:hover .lamp-stage .frame-off {
+  filter: grayscale(0.28) brightness(0.84) contrast(1.04);
+}
+
+.lamp.on .lamp-stage .frame-off {
+  filter: grayscale(0) brightness(1) contrast(1);
+}
+
+.lamp-stage .frame-on {
+  opacity: 0;
+  /* гаснет: быстрее и с плавным хвостом остаточного накала */
+  transition: opacity 900ms cubic-bezier(0.4, 0, 0.5, 1);
+}
+
+.lamp.on .lamp-stage .frame-on {
+  opacity: 1;
+  /* разгорается: дольше, с мягким выходом на полную яркость */
+  transition: opacity 1250ms cubic-bezier(0.32, 0, 0.24, 1);
+}
+
+/* фото, снятое на чёрном, растворяем в фоне страницы — рамка не нужна.
+   маска только на кадрах, иначе она срезала бы и свечение вокруг */
+.lamp.blend .lamp-stage img {
+  -webkit-mask-image: radial-gradient(closest-side at 50% 52%, #000 60%, transparent 100%);
+  mask-image: radial-gradient(closest-side at 50% 52%, #000 60%, transparent 100%);
+}
+
+/* тёплое зарево внутри кадра */
+.halo {
+  display: block;
+  position: absolute;
+  inset: -6%;
+  pointer-events: none;
+  opacity: 0;
+  mix-blend-mode: screen;
+  transition: opacity 1100ms cubic-bezier(0.32, 0, 0.24, 1);
+  background: radial-gradient(
+    42% 38% at var(--hx, 50%) var(--hy, 55%),
+    rgba(255, 214, 120, 0.5),
+    rgba(255, 179, 51, 0.2) 40%,
+    transparent 72%
+  );
+}
+
+.lamp.on .halo {
+  opacity: 1;
+  animation: breathe 5s ease-in-out infinite;
+}
+
+@keyframes breathe {
+  0%,
+  100% {
+    opacity: 0.88;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+/* выброс света наружу, за пределы фотографии */
+.bloom {
+  display: block;
+  position: absolute;
+  inset: -35%;
+  z-index: -1;
+  pointer-events: none;
+  opacity: 0;
+  filter: blur(40px);
+  transition: opacity 1300ms cubic-bezier(0.32, 0, 0.24, 1);
+  background: radial-gradient(
+    38% 34% at var(--hx, 50%) var(--hy, 55%),
+    rgba(255, 190, 80, 0.55),
+    transparent 70%
+  );
+}
+
+.lamp.on .bloom {
+  opacity: 1;
+}
+
+/* подпись — без линий и рамок */
+.lamp-label {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: baseline;
+  column-gap: 1rem;
+  padding-top: 1.1rem;
+}
+
+.lamp-title {
+  font-weight: 600;
+  font-size: 1.05rem;
+  letter-spacing: -0.015em;
+  color: var(--chalk);
+}
+
+.lamp-sub {
+  grid-column: 1;
+  font-size: 0.78rem;
+  color: var(--ash);
+}
+
+.state {
+  grid-row: 1 / span 2;
+  grid-column: 2;
+  align-self: center;
+  font-size: 0.66rem;
+  font-weight: 500;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--ash);
+  white-space: nowrap;
+  transition: color 1000ms ease, text-shadow 1000ms ease;
+}
+
+.lamp.on .state {
+  color: var(--glow);
+  text-shadow: 0 0 16px rgba(255, 201, 77, 0.65);
+}
+
+.lamp--xl .lamp-title {
+  font-size: 1.2rem;
+}
+
+/* ---------- ГЕРОЙ ---------- */
+
+.hero {
+  min-height: 100svh;
+  display: grid;
+  grid-template-columns: 1fr 0.85fr;
+  align-items: center;
+  gap: clamp(2rem, 6vw, 5rem);
+  padding-top: 5rem;
+}
+
+.hero-lamp {
+  max-width: 460px;
+  justify-self: end;
+  width: 100%;
+}
+
+.hint {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.65rem;
+  margin-top: 2.2rem;
+  font-size: 0.72rem;
+  font-weight: 500;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+  color: var(--ash);
+}
+
+.hint::before {
+  content: '';
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--glow);
+  box-shadow: 0 0 14px var(--glow);
+  animation: pulse 2.4s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%,
+  100% {
+    opacity: 0.2;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+/* ---------- ХРОНИКА: КАРТОЧКА + РАЗГОРАЮЩАЯСЯ ЛАМПА ---------- */
+
+.chronicle {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 0.82fr);
+  align-items: center;
+  gap: clamp(2rem, 6vw, 5rem);
+  margin-top: 3rem;
+}
+
+.chr-card {
+  min-height: 340px;
+  display: flex;
+  flex-direction: column;
+}
+
+.chr-meta {
+  display: flex;
+  align-items: center;
+  gap: 0.9rem;
+  margin-bottom: 1.6rem;
+  font-size: 0.68rem;
+  letter-spacing: 0.22em;
+  color: var(--ash);
+  font-variant-numeric: tabular-nums;
+}
+
+.chr-wire {
+  flex: 1;
+  height: 1px;
+  background: linear-gradient(
+    90deg,
+    color-mix(in srgb, var(--glow) calc(var(--beam, 0) * 70%), var(--iron)),
+    transparent
+  );
+  transition: background 900ms ease;
+}
+
+.chr-body {
+  flex: 1;
+  animation: cardIn 620ms cubic-bezier(0.2, 0.7, 0.2, 1) both;
+}
+
+@keyframes cardIn {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.chr-year {
+  font-weight: 600;
+  font-size: clamp(2.6rem, 6vw, 4rem);
+  letter-spacing: -0.04em;
+  line-height: 1;
+  color: var(--glow);
+  margin-bottom: 0.9rem;
+  text-shadow: 0 0 calc(var(--beam, 0) * 45px) rgba(255, 201, 77, 0.5);
+  transition: text-shadow 900ms ease;
+}
+
+.chr-body h3 {
+  font-size: clamp(1.35rem, 2.6vw, 1.8rem);
+  margin-bottom: 0.8rem;
+}
+
+.chr-body p {
+  color: var(--smoke);
+  max-width: 46ch;
+  margin: 0;
+}
+
+/* стрелки и деления */
+.chr-controls {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  margin-top: 2.2rem;
+}
+
+.chr-controls > button {
+  width: 46px;
+  height: 46px;
+  flex: none;
+  border: 1px solid var(--iron);
+  border-radius: 50%;
+  background: none;
+  color: var(--fog);
+  font-size: 1rem;
+  cursor: pointer;
+  transition: border-color 350ms ease, color 350ms ease, background 350ms ease;
+}
+
+.chr-controls > button:hover:not(:disabled) {
+  border-color: var(--glow);
+  color: var(--glow);
+  background: rgba(255, 201, 77, 0.07);
+}
+
+.chr-controls > button:disabled {
+  opacity: 0.22;
+  cursor: default;
+}
+
+.chr-ticks {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  margin-left: 0.8rem;
+}
+
+.chr-ticks button {
+  width: 16px;
+  height: 2px;
+  padding: 10px 0;
+  border: 0;
+  background: none;
+  cursor: pointer;
+  position: relative;
+}
+
+.chr-ticks button::before {
+  content: '';
+  position: absolute;
+  inset: 10px 0;
+  background: var(--iron);
+  transition: background 500ms ease, box-shadow 500ms ease;
+}
+
+.chr-ticks button.lit::before {
+  background: var(--glow);
+  box-shadow: 0 0 10px rgba(255, 201, 77, 0.55);
+}
+
+.chr-ticks button:hover::before {
+  background: var(--glow-soft);
+}
+
+/* лампа, которая разгорается по мере пролистывания */
+.chr-lamp {
+  display: block;
+  width: 100%;
+  max-width: 440px;
+  justify-self: end;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.chr-lamp:focus-visible {
+  outline: 2px solid var(--glow);
+  outline-offset: 10px;
+}
+
+.chr-stage {
+  display: block;
+  position: relative;
+  width: 100%;
+  aspect-ratio: 1 / 1;
+}
+
+.chr-stage img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  user-select: none;
+  -webkit-user-drag: none;
+  -webkit-mask-image: radial-gradient(closest-side at 50% 52%, #000 60%, transparent 100%);
+  mask-image: radial-gradient(closest-side at 50% 52%, #000 60%, transparent 100%);
+}
+
+.chr-stage .frame-off {
+  filter: grayscale(calc(0.45 - var(--p) * 0.45)) brightness(calc(0.7 + var(--p) * 0.3));
+  transition: filter 1100ms cubic-bezier(0.32, 0, 0.24, 1);
+}
+
+/* накал кадра «включено» прямо пропорционален прогрессу хроники */
+.chr-stage .frame-on {
+  opacity: var(--p);
+  transition: opacity 1100ms cubic-bezier(0.32, 0, 0.24, 1);
+}
+
+.chr-bloom {
+  display: block;
+  position: absolute;
+  inset: -35%;
+  z-index: -1;
+  pointer-events: none;
+  opacity: var(--p);
+  filter: blur(45px);
+  transform: scale(calc(0.75 + var(--p) * 0.25));
+  transition: opacity 1300ms cubic-bezier(0.32, 0, 0.24, 1),
+    transform 1300ms cubic-bezier(0.32, 0, 0.24, 1);
+  background: radial-gradient(
+    38% 34% at var(--hx, 50%) var(--hy, 68%),
+    rgba(255, 190, 80, 0.6),
+    transparent 70%
+  );
+}
+
+.chr-gauge {
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+  margin-top: 1.2rem;
+  font-size: 0.68rem;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--ash);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.chr-gauge-bar {
+  flex: 1;
+  height: 1px;
+  background: var(--iron);
+  position: relative;
+  overflow: hidden;
+}
+
+.chr-gauge-bar span {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, var(--glow-deep), var(--glow));
+  transform-origin: left center;
+  transition: transform 900ms cubic-bezier(0.32, 0, 0.24, 1);
+}
+
+/* ---------- СОЗДАТЕЛЬ ---------- */
+
+.creator {
+  display: grid;
+  grid-template-columns: minmax(0, 0.85fr) minmax(0, 1.3fr);
+  gap: clamp(2rem, 5vw, 4.5rem);
+  align-items: start;
+  margin-top: 3rem;
+}
+
+/* Карточка человека: сверху слайдер, ниже имя и данные.
+   Отступы вынесены в переменные — слайдер по ним выходит встык с краями. */
+.portrait,
+.rival {
+  --card-pad-x: 1.4rem;
+  --card-pad-y: 1.5rem;
+  padding: var(--card-pad-y) var(--card-pad-x);
+  overflow: hidden;
+}
+
+.portrait {
+  background: linear-gradient(180deg, var(--graphite), var(--coal));
+  border-top: 1px solid var(--glow-deep);
+}
+
+.portrait .big {
+  font-weight: 600;
+  font-size: clamp(1.9rem, 3.8vw, 2.4rem);
+  letter-spacing: -0.035em;
+  line-height: 1.05;
+  color: var(--chalk);
+}
+
+.portrait dl {
+  margin: 1.8rem 0 0;
+  display: grid;
+  gap: 0.9rem;
+}
+
+.portrait dt {
+  font-size: 0.66rem;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--ash);
+}
+
+.portrait dd {
+  margin: 0.15rem 0 0;
+  color: var(--fog);
+  font-size: 0.94rem;
+}
+
+.quote {
+  margin: 2.5rem 0 0;
+  padding-left: 1.4rem;
+  border-left: 2px solid var(--glow-deep);
+}
+
+.quote p {
+  font-weight: 500;
+  font-size: clamp(1.15rem, 2.2vw, 1.5rem);
+  letter-spacing: -0.02em;
+  line-height: 1.35;
+  color: var(--chalk);
+  margin-bottom: 0.7rem;
+}
+
+.quote cite {
+  font-style: normal;
+  font-size: 0.7rem;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--ash);
+}
+
+/* ---------- СЛАЙДЕР ФОТОГРАФИЙ В КАРТОЧКЕ ---------- */
+
+.slides-stage {
+  position: relative;
+  aspect-ratio: var(--slide-ratio, 4 / 5);
+  overflow: hidden;
+  background: var(--void);
+}
+
+.slides-stage img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  opacity: 0;
+  filter: var(--photo);
+  transition: opacity 650ms cubic-bezier(0.32, 0, 0.24, 1),
+    filter 900ms cubic-bezier(0.32, 0, 0.24, 1);
+}
+
+.slides-stage img.is-on {
+  opacity: 1;
+}
+
+.slides-stage img.paper {
+  filter: var(--photo-paper);
+}
+
+/* карточка «освещает» портрет при наведении — тем же жестом, что и лампы */
+.portrait:hover .slides-stage img,
+.rival:hover .slides-stage img {
+  filter: var(--photo-hover);
+}
+
+.portrait:hover .slides-stage img.paper,
+.rival:hover .slides-stage img.paper {
+  filter: var(--photo-paper-hover);
+}
+
+/* фото встык с краями карточки */
+.slides--head .slides-stage {
+  margin: calc(-1 * var(--card-pad-y)) calc(-1 * var(--card-pad-x)) 0;
+}
+
+.slides-caption {
+  margin: 0.9rem 0 0;
+  font-size: 0.78rem;
+  line-height: 1.45;
+  color: var(--ash);
+  min-height: 2.3em;
+}
+
+/* управление поверх снимка, у нижнего края */
+.slides-ui {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 2.4rem 0.9rem 0.8rem;
+  background: linear-gradient(180deg, transparent, rgba(0, 0, 0, 0.55));
+}
+
+.slides-dots {
+  display: flex;
+  gap: 5px;
+}
+
+.slides-dots button {
+  width: 18px;
+  height: 2px;
+  padding: 8px 0;
+  border: 0;
+  background: none;
+  cursor: pointer;
+  position: relative;
+}
+
+.slides-dots button::before {
+  content: '';
+  position: absolute;
+  inset: 8px 0;
+  background: rgba(255, 255, 255, 0.4);
+  transition: background 400ms ease, box-shadow 400ms ease;
+}
+
+.slides-dots button.on::before {
+  background: var(--glow-soft);
+  box-shadow: 0 0 10px rgba(255, 201, 77, 0.6);
+}
+
+.slides-arrows {
+  display: flex;
+  gap: 0.35rem;
+}
+
+.slides-arrows button {
+  width: 30px;
+  height: 30px;
+  border: 1px solid rgba(255, 255, 255, 0.28);
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.35);
+  backdrop-filter: blur(6px);
+  color: #fff;
+  font-size: 0.95rem;
+  line-height: 1;
+  cursor: pointer;
+  transition: border-color 300ms ease, background 300ms ease, color 300ms ease;
+}
+
+.slides-arrows button:hover {
+  border-color: var(--glow-soft);
+  color: var(--glow-soft);
+  background: rgba(0, 0, 0, 0.6);
+}
+
+.rivals {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(235px, 1fr));
+  gap: 1.4rem;
+  margin-top: 3.5rem;
+}
+
+.rival {
+  background: linear-gradient(180deg, var(--graphite), var(--coal));
+  border-top: 1px solid var(--iron);
+  transition: border-top-color 400ms ease, transform 400ms ease, background 500ms ease;
+}
+
+.rival:hover {
+  border-top-color: var(--glow-deep);
+  transform: translateY(-4px);
+}
+
+.rival-body {
+  margin-top: 1.2rem;
+}
+
+.rival h3 {
+  margin-bottom: 0.3rem;
+}
+
+.rival .role {
+  font-size: 0.66rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--glow-deep);
+  margin-bottom: 0.9rem;
+}
+
+.rival p {
+  color: var(--smoke);
+  font-size: 0.9rem;
+}
+
+/* ---------- ФАКТЫ ---------- */
+
+.facts {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(255px, 1fr));
+  gap: 1.4rem;
+  margin-top: 3rem;
+}
+
+.fact {
+  padding: 1.8rem 1.5rem;
+  background: linear-gradient(180deg, var(--graphite), var(--coal));
+  border-top: 1px solid var(--iron);
+  transition: border-top-color 450ms ease, transform 450ms ease;
+}
+
+.fact:hover {
+  border-top-color: var(--glow-deep);
+  transform: translateY(-4px);
+}
+
+.fact:hover .fact-num {
+  color: var(--glow);
+  text-shadow: 0 0 24px rgba(255, 201, 77, 0.45);
+}
+
+.fact-num {
+  font-weight: 600;
+  font-size: 2rem;
+  letter-spacing: -0.035em;
+  line-height: 1;
+  color: var(--ash);
+  margin-bottom: 0.8rem;
+  transition: color 450ms ease, text-shadow 450ms ease;
+}
+
+.fact h3 {
+  margin-bottom: 0.5rem;
+}
+
+.fact p {
+  color: var(--smoke);
+  font-size: 0.92rem;
+}
+
+/* ---------- ФИНАЛЬНАЯ ПАРА ЛАМП ---------- */
+
+.pair {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: clamp(2rem, 5vw, 4rem);
+  margin-top: 3rem;
+}
+
+.pair-item p {
+  margin-top: 1.4rem;
+  color: var(--smoke);
+  font-size: 0.94rem;
+}
+
+/* ---------- ПЕРЕКЛЮЧАТЕЛИ ТЕМЫ И ЯЗЫКА ---------- */
+
+.topbar {
+  position: fixed;
+  top: clamp(0.8rem, 2.5vw, 1.5rem);
+  right: clamp(0.8rem, 2.5vw, 1.5rem);
+  z-index: 30;
+  display: flex;
+  gap: 0.5rem;
+}
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 0.85rem;
+  border: 1px solid var(--iron);
+  border-radius: 999px;
+  background: var(--panel);
+  backdrop-filter: blur(10px);
+  color: var(--smoke);
+  font-family: var(--font-body), sans-serif;
+  font-size: 0.68rem;
+  font-weight: 500;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: border-color 350ms ease, color 350ms ease, background 500ms ease;
+}
+
+.chip--theme:hover {
+  color: var(--chalk);
+  border-color: var(--ash);
+}
+
+.chip-icon {
+  font-size: 0.9rem;
+  line-height: 1;
+  color: var(--glow);
+}
+
+.chip--lang {
+  gap: 0;
+  padding: 0.35rem 0.4rem;
+  cursor: default;
+}
+
+.chip--lang button {
+  border: 0;
+  background: none;
+  padding: 0.18rem 0.55rem;
+  border-radius: 999px;
+  color: var(--ash);
+  font: inherit;
+  letter-spacing: 0.1em;
+  cursor: pointer;
+  transition: color 300ms ease, background 300ms ease;
+}
+
+.chip--lang button:hover {
+  color: var(--chalk);
+}
+
+.chip--lang button.active {
+  color: var(--void);
+  background: var(--glow);
+}
+
+/* ---------- ОБЩИЙ ВЫКЛЮЧАТЕЛЬ ---------- */
+
+.master {
+  position: fixed;
+  right: clamp(1rem, 3vw, 2rem);
+  bottom: clamp(1rem, 3vw, 2rem);
+  z-index: 20;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.65rem 1.05rem;
+  border: 1px solid var(--iron);
+  border-radius: 999px;
+  background: var(--panel);
+  backdrop-filter: blur(10px);
+  color: var(--smoke);
+  font-family: var(--font-body), sans-serif;
+  font-size: 0.72rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: border-color 400ms ease, color 400ms ease, box-shadow 400ms ease;
+}
+
+.master:hover {
+  color: var(--chalk);
+  border-color: var(--ash);
+}
+
+.master.lit {
+  border-color: rgba(255, 201, 77, 0.45);
+  box-shadow: 0 0 40px -12px rgba(255, 201, 77, 0.5);
+}
+
+.master-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--ash);
+  transition: background 400ms ease, box-shadow 400ms ease;
+}
+
+.master.lit .master-dot {
+  background: var(--glow);
+  box-shadow: 0 0 12px var(--glow);
+}
+
+.master-count {
+  color: var(--fog);
+  font-variant-numeric: tabular-nums;
+}
+
+.master.lit .master-count {
+  color: var(--glow);
+}
+
+/* ---------- ПОДВАЛ ---------- */
+
+footer {
+  border-top: 1px solid var(--iron);
+  padding: 3.5rem 1.5rem 5rem;
+  text-align: center;
+  color: var(--ash);
+  font-size: 0.85rem;
+  position: relative;
+  z-index: 1;
+}
+
+footer .script {
+  font-size: 1.3rem;
+  font-weight: 500;
+  color: var(--smoke);
+  margin-bottom: 0.6rem;
+}
+
+/* Адаптив вынесен в отдельные файлы и подключается в app/layout.js:
+   styles/tablet.css · styles/mobile.css · styles/touch.css · styles/motion.css */
