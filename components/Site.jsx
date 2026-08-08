@@ -9,6 +9,7 @@ import PhotoSlides from './PhotoSlides';
 import Reveal from './Reveal';
 import { useT } from './Settings';
 import TopBar from './TopBar';
+import { publicPath } from '../lib/paths';
 
 /**
  * Порядок разделов подобран так, чтобы два лампомоментa никогда не шли
@@ -36,8 +37,8 @@ export default function Site() {
 
           <div className="hero-lamp">
             <Lamp
-              off="/foto/off1.jpg"
-              on="/foto/on1.jpg"
+              off={publicPath("/foto/off1.jpg")}
+              on={publicPath("/foto/on1.jpg")}
               title={t.lamps.edison.title}
               sub={t.lamps.edison.sub}
               glow={{ x: 50, y: 68 }}
@@ -121,7 +122,7 @@ export default function Site() {
             <p className="lead">{t.chronicle.lead}</p>
           </Reveal>
 
-          <Chronicle items={t.chronicle.items} off="/foto/off1.jpg" on="/foto/on1.jpg" />
+          <Chronicle items={t.chronicle.items} off={publicPath("/foto/off1.jpg")} on={publicPath("/foto/on1.jpg")} />
         </section>
 
         {/* ── 03 · ФАКТЫ · без ламп ────────────────────────────── */}
@@ -163,8 +164,8 @@ export default function Site() {
           <div className="pair">
             <Reveal className="pair-item">
               <Lamp
-                off="/foto/off2.jpg"
-                on="/foto/on2.jpg"
+                off={publicPath("/foto/off2.jpg")}
+                on={publicPath("/foto/on2.jpg")}
                 title={t.lamps.desk.title}
                 sub={t.lamps.desk.sub}
                 glow={{ x: 48, y: 40 }}
@@ -174,8 +175,8 @@ export default function Site() {
 
             <Reveal className="pair-item" delay={120}>
               <Lamp
-                off="/foto/off3.jpg"
-                on="/foto/on3.jpg"
+                off={publicPath("/foto/off3.jpg")}
+                on={publicPath("/foto/on3.jpg")}
                 title={t.lamps.ceiling.title}
                 sub={t.lamps.ceiling.sub}
                 glow={{ x: 55, y: 42 }}
