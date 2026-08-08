@@ -8,7 +8,6 @@ const nextConfig = {
     unoptimized: true, // для статического экспорта
   },
   output: 'export', // статический экспорт для GitHub Pages
-  basePath: '/Light', // имя репозитория
 };
 
 export default nextConfig;
